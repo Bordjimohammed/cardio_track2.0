@@ -9,14 +9,14 @@ class Screen2 extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Image.asset(
-          "lib/images/intro1.png",
-          width:200,
-          height:250,
+          "lib/images/intro2.png",
+          width:190,
+          height:190,
           fit: BoxFit.cover,),
         const SizedBox(height: 0),
         const SizedBox(height: 80),
         const Text(
-          "connexion a votre dispositif ",
+          "Graphiques ECG en direct",
           style: TextStyle(
             color: Colors.black,
             fontSize: 25,
@@ -27,8 +27,8 @@ class Screen2 extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Text(
-            "Grâce à la connexion Wi-Fi, votre ESP32 envoie des données ECG instantanément à votre application mobile",
-            style: TextStyle(
+              "Visualisez vos signaux ECG en direct grâce à une interface simple et intuitive, connectée à votre capteur via Wi-Fi" ,       
+              style: TextStyle(
               color: Colors.black.withOpacity(0.6),
               fontSize: 16,
               fontWeight: FontWeight.w300,

@@ -74,13 +74,10 @@ class MedicalAdvicePage extends StatelessWidget {
     return Scaffold(
       // Barre d'app en haut avec bouton de recherche
       appBar: AppBar(
-        title: const Text("Conseils Santé"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () => _showSearchDialog(context), // Affiche la boîte de dialogue de recherche
-          ),
-        ],
+        title: Text("Conseils Santé",style:Theme.of(context).textTheme.headlineMedium?.copyWith(  color: Colors.white,)
+      ),
+        centerTitle: true,
+        backgroundColor: Colors.red[400],
       ),
       // Affiche chaque conseil sous forme de carte dans une liste
       body: ListView.separated(

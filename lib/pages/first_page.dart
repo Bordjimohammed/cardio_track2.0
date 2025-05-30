@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
-
 import 'package:Cardio_Track/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../pages/ecg.dart';
 import 'package:http/http.dart' as http;
 
@@ -17,52 +18,60 @@ class FirstPage extends StatefulWidget {
 class _FirstPageState extends State<FirstPage> {
   final storage = const FlutterSecureStorage();
   String? name;
+  String? email;
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // Chargement des données utilisateur
+    _loadUserData();// Chargement des données utilisateur
+
+    Timer.periodic(Duration(seconds: 10), (timer) {
+    if (mounted) {
+      _loadUserData();
+    } else {
+      timer.cancel();
+    }
+  });
   }
 
   Future<void> _loadUserData() async {
-    String? token = await storage.read(
-        key:
-            'access_token'); /*
-    String? name = await storage.read(key: 'user_name');
-    String? rate = await storage.read(key: 'heart_rate');
-    String? pressure = await storage.read(key: 'blood_pressure');
-*/
-    final response = await http.get(
-      Uri.parse("http://192.168.43.40:5000/me"),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      name = data['name'];
-    } else {
-      final data = jsonDecode(response.body);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['error'])),
-      );
-    }
+    String? token = await storage.read(key:'access_token');
+final response = await http.get(
+  Uri.parse("https://cardiotrack-server.onrender.com/me"),
+  headers: {
+    'Authorization': 'Bearer $token',
+  },
+);
+if (response.statusCode == 200) {
+  final data = jsonDecode(response.body);
+  name = data['name'];
+  email = data['email'];
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  userProvider.setUserName(data['name']);   // ou la variable correspondante
+  userProvider.setEmail(data['email']);     // ou la variable correspondante
+  userProvider.setPassword(data['password']); // si tu veux stocker le mot de passe
+  int heartRate = data['heart_rate'];
 
-    setState(() {
-      name ?? 'Utilisateur';
-    });
+  // <= ajout
+} else {
+  final data = jsonDecode(response.body);
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(data['error'])),
+  );
+}
+
+    //setState(() {
+      //name ?? 'Utilisateur';
+    //});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cardio Track'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {},
-          ),
-        ],
+        title: Text("Cardio Track",style:Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white,)
+        ) ,
+        centerTitle: true,
+        backgroundColor: Colors.red[400],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -83,11 +92,12 @@ class _FirstPageState extends State<FirstPage> {
   }
 
   Widget _buildWelcomeSection(BuildContext context) {
+    final name = context.watch<UserProvider>().userName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Bonjour ${name ?? ''} 👋',
+          'Bonjour ${name} ',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Colors.blue[800],

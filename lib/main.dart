@@ -1,21 +1,18 @@
 // Importation des composants nécessaires
+
+import 'package:Cardio_Track/login_page.dart';
 import 'package:Cardio_Track/navbar/navbar.dart';
-import 'package:Cardio_Track/pages/dashboard.dart';
-import 'package:Cardio_Track/pages/first_page.dart';
-import 'package:Cardio_Track/screens/startup.dart';
+import 'package:Cardio_Track/root_page.dart';
+import 'package:Cardio_Track/spalsh.dart';
 import 'package:flutter/material.dart'; // Import du SDK Flutter de base
-import 'package:Cardio_Track/pages/medicaladvice_page.dart';
-import 'intro_screen.dart';
 import 'package:provider/provider.dart'; // Pour la gestion d'état
-import '../pages/ecg.dart';
-import '../pages/logout_page.dart';
-import '../login_page.dart';
 import 'pages/theme_provider.dart'; // Gestionnaire de thème
 import '../providers/user_provider.dart'; // Gestionnaire des données utilisateur
 
 
 // Fonction principale qui lance l'application
-void main() {
+void main()async {
+  WidgetsFlutterBinding.ensureInitialized(); // Nécessaire pour attendre des appels asynchrones
   runApp(
     // MultiProvider permet d'utiliser plusieurs fournisseurs d'état
     MultiProvider(
@@ -24,6 +21,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => HeartRateProvider()),
+        ChangeNotifierProvider(create: (_) => EcgProvider()),
+
 
 // 💡 ajoute ce provider
       ],
@@ -40,7 +39,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // Désactive la bannière debug
-      home:  NavBar(), // Premier écran affiché (écrans d'introduction)
+      //home: const RootPage(), // Démarre par l'écran de splash
+      home:  NavBar (), // Premier écran affiché (écrans d'introduction)
       themeMode: Provider.of<ThemeProvider>(context).themeMode,
       theme: ThemeData.light(),
       darkTheme: ThemeData.dark(),

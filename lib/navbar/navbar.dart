@@ -20,7 +20,7 @@ class _NavBarState extends State<NavBar> {
 
   final List<Widget> _pages = [
     const FirstPage(),
-    const DashboardPage(),
+    const DashboardPage(userEmail: '',),
     const LiveDataChart(), // Page ECG
     MedicalAdvicePage(), // Page des conseils médicaux
     const LogoutPage(), // Page de déconnexion

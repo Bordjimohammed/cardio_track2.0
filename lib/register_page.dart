@@ -1,4 +1,5 @@
 import 'package:Cardio_Track/login_page.dart';
+import 'package:Cardio_Track/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:Cardio_Track/components/my_button.dart';
 import 'package:Cardio_Track/components/my_textfield.dart';
@@ -7,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Pour le stockage sécurisé
 import 'package:Cardio_Track/navbar/navbar.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart';
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -58,7 +61,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 */
   Future<void> registerUser() async {
-    final url = Uri.parse("http://192.168.43.40:5000/sign-in");
+    final url = Uri.parse("https://cardiotrack-server.onrender.com/sign-in");
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
@@ -76,10 +79,10 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(data['message'])),
       );
-     Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => LoginPage()));
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => NavBar()));
       // TODO: Sauvegarder le token avec shared_preferences*/
-      final url2 = Uri.parse("http://192.168.43.40:5000/log-in");
+      final url2 = Uri.parse("https://cardiotrack-server.onrender.com/log-in");
       final response2 = await http.post(
         url2,
         headers: {"Content-Type": "application/json"},
@@ -102,7 +105,6 @@ class _RegisterPageState extends State<RegisterPage> {
         );
         Navigator.of(context)
             .pushReplacement(MaterialPageRoute(builder: (_) => NavBar()));
-        // TODO: Sauvegarder le token avec shared_preferences
       } else {
         final data = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               children: [
                 const SizedBox(height: 100),
-                Image.asset('lib/images/logo.png', height: 250, width: 250),
+                Image.asset('lib/images/logo.png', height: 175, width: 200),
                 const SizedBox(height: 20),
                 Text(
                   'Créez votre compte',
@@ -156,8 +158,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
                     SquareTile(imagePath: 'lib/images/google.png'),
-                    SizedBox(width: 25),
-                    SquareTile(imagePath: 'lib/images/apple.png'),
                   ],
                 ),
                 const SizedBox(height: 30),
@@ -174,7 +174,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       onPressed: () {
                       Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => NavBar()),
+                      MaterialPageRoute(builder: (_) => LoginPage()),
                       );                      },
                     )
                   ],
