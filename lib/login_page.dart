@@ -70,38 +70,42 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
   }
+/*
 
-  Future<void> Google_login() async {
-    final url = Uri.parse("https://cardiotrack-server.onrender.com/callback");
-    final response = await http.get(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "email": emailController.text.trim(),
-        "password": passwordController.text.trim(),
-        "username": nameController.text.trim(),
-      }),
+Future<void> googleLogin() async {
+  try {
+    final url = Uri.parse("https://cardiotrack-server.onrender.com/google_login");
+
+    // Launch the login flow
+    final result = await FlutterWebAuth.authenticate(
+      url: url.toString(),
+      callbackUrlScheme: "myapp", // This must match your custom scheme
     );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final storage = FlutterSecureStorage();
-      await storage.write(key: 'refresh_token', value: data['refresh_token']);
-      await storage.write(key: 'access_token', value: data['access_token']);
 
+    // Extract tokens from the URL
+    final uri = Uri.parse(result);
+    final accessToken = uri.queryParameters['access_token'];
+    final refreshToken = uri.queryParameters['refresh_token'];
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'])),
-      );
+    // Store the tokens
+    final storage = FlutterSecureStorage();
+    await storage.write(key: 'refresh_token', value: refreshToken);
+    await storage.write(key: 'access_token', value: accessToken);
 
-      Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => NavBar()));
-    } else {
-      final data = jsonDecode(response.body);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['error'])),
-      );
-    }
+    // Done!
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Google login successful')),
+    );
+
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => NavBar()));
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Google login failed')),
+    );
   }
+}
+*/
+
   // Construction de l'interface utilisateur
   @override
   Widget build(BuildContext context) {
@@ -151,19 +155,19 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       GestureDetector(
                         onTap: () {
-          // Naviguer vers la page de réinitialisation
-                        Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ResetPasswordPage()),
-                      );
+                          // Naviguer vers la page de réinitialisation
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ResetPasswordPage()),
+                          );
                         },
                         child: Text(
-                        'Mot de passe oublié ?',
-                        style: TextStyle(
-                        color: Colors.blue, // Style de lien
-                        decoration: TextDecoration.underline,
-                        fontWeight: FontWeight.w500,
-                        ),
+                          'Mot de passe oublié ?',
+                          style: TextStyle(
+                            color: Colors.blue, // Style de lien
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

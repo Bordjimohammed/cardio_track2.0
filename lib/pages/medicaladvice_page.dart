@@ -84,61 +84,59 @@ class MedicalAdvicePage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: conseils.length,
         separatorBuilder: (_, __) => const SizedBox(height: 16), // Espace entre les cartes
-        itemBuilder: (context, index) => _buildAdviceCard(conseils[index]), // Construction de la carte
+        itemBuilder: (context, index) => _buildAdviceCard(context, conseils[index]), // Construction de la carte
       ),
     );
   }
 
   // Méthode pour construire chaque carte de conseil
-  Widget _buildAdviceCard(MedicalAdvice advice) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12), // Coins arrondis
+Widget _buildAdviceCard(BuildContext context, MedicalAdvice advice) {
+  final textTheme = Theme.of(context).textTheme;
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: ExpansionTile(
+      leading: Icon(advice.icon, color: advice.color),
+      title: Text(
+        advice.title,
+        style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
       ),
-      child: ExpansionTile(
-        leading: Icon(advice.icon, color: advice.color), // Icône à gauche
-        title: Text(
-          advice.title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
+      subtitle: Text(
+        '${advice.description}\n${advice.source}',
+        style: textTheme.bodyMedium?.copyWith(fontSize: 12),
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Recommandations:",
+                style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ...advice.tips.map((tip) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.arrow_right, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(tip, style: textTheme.bodyMedium)),
+                      ],
+                    ),
+                  )),
+              const SizedBox(height: 12),
+            ],
           ),
         ),
-        subtitle: Text('${advice.description}\n${advice.source}',
-          style: TextStyle(fontSize: 12,color: Colors.grey[700]),), // Description sous le titre
-        children: [
-          // Détails affichés lorsqu'on ouvre la carte
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Recommandations:",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                // Affiche chaque conseil sous forme de ligne avec flèche
-                ...advice.tips.map((tip) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.arrow_right, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(tip)),
-                        ],
-                      ),
-                    )),
-                const SizedBox(height: 12),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   // Affiche un champ de recherche dans une boîte de dialogue
   void _showSearchDialog(BuildContext context) {

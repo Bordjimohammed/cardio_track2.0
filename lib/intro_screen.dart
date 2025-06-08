@@ -47,8 +47,9 @@ class _IntroScreensState extends State<IntroScreens> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Bouton Précédent stylisé
-                ElevatedButton(
+                _currentPageIndex == 0
+                ? const SizedBox(width: 110) 
+                :ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey.shade300,
                     shape: RoundedRectangleBorder(
@@ -58,13 +59,11 @@ class _IntroScreensState extends State<IntroScreens> {
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
                   onPressed: () {
-                    if (_currentPageIndex > 0) {
                       _pageController.previousPage(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
                       );
-                    }
-                  },
+                    },
                   child: const Text(
                     "Précédent",
                     style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),

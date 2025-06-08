@@ -23,7 +23,6 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
 final storage = const FlutterSecureStorage();
   List<Map<String, dynamic>> historique = [];
-
   // Map to store a unique GlobalKey for each test's ECG graph
   final Map<int, GlobalKey> _graphKeys = {};
 
@@ -127,35 +126,53 @@ final storage = const FlutterSecureStorage();
   }
 Future<void> _shareTest(Map<String, dynamic> test, GlobalKey key) async {
   try {
-    // Capture the ECG graph as an image
+    if (key.currentContext == null) {
+      // Essai de rendre le widget visible en scrollant automatiquement
+      await Scrollable.ensureVisible(
+        key.currentContext!,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+
+    // Vérifier encore après scroll
+    if (key.currentContext == null) {
+      throw Exception(
+        'Le graphe n\'est pas encore prêt à être partagé. Faites défiler la carte pour afficher le graphe puis réessayez.'
+      );
+    }
+
+    await Future.delayed(const Duration(milliseconds: 300)); // Laisser le temps au rendu
+
     RenderRepaintBoundary boundary =
         key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+    if (boundary.debugNeedsPaint) {
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
     ui.Image image = await boundary.toImage(pixelRatio: 3.0);
     ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-    // Save the image to a temporary file
     final tempDir = await getTemporaryDirectory();
     final file = await File('${tempDir.path}/ecg_${test['id']}.png').create();
     await file.writeAsBytes(pngBytes);
 
-    // Compose the text
     final date = test['timestamp'] ?? '';
     final rythme = test['rythme']?.toString() ?? '';
     final status = test['status'] ?? '';
     final shareText = 'ECG Test\nDate: $date\nRythme: $rythme\nStatus: $status';
 
-    // Share the image and text
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: shareText,
-    );
+    await Share.shareXFiles([XFile(file.path)], text: shareText);
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Erreur lors du partage : $e')),
     );
   }
 }
+
   //final storage = const FlutterSecureStorage();
   @override
   void initState() {
@@ -249,6 +266,7 @@ Future<void> _shareTest(Map<String, dynamic> test, GlobalKey key) async {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                        
                           IconButton(
                             icon: Icon(Icons.delete, color: Colors.red),
                             onPressed: () => _deleteTest(test['id']),
@@ -262,7 +280,10 @@ Future<void> _shareTest(Map<String, dynamic> test, GlobalKey key) async {
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 8),
-                        child: buildECGGraph(decodeECGData(test['signal'])),
+                    child: RepaintBoundary(
+                      key: _graphKeys.putIfAbsent(test['id'], () => GlobalKey()),
+                      child: buildECGGraph(decodeECGData(test['signal'])),
+                    ),
                       ),
                   ],
                 ),

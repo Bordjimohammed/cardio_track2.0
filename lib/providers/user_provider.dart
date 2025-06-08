@@ -7,6 +7,9 @@ class UserProvider with ChangeNotifier {
   String _userName = '';
   String _email = '';
   String _password = '';
+  String token = '';
+  String telProche = '';
+  String telDocteur = '';
 
   String get userName => _userName;
   String get email => _email;
@@ -33,6 +36,15 @@ class UserProvider with ChangeNotifier {
     _password = '';
     notifyListeners();
   }
+  void setTelProche(String value) {
+  telProche = value;
+  notifyListeners();
+}
+void setTelDocteur(String value) {
+  telDocteur = value;
+  notifyListeners();
+}
+
 }
 class HeartRateProvider with ChangeNotifier {
   int _heartRate = 0;

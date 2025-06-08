@@ -17,12 +17,7 @@ class RegisterPage extends StatefulWidget {
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
-bool isValidEmail(String email) {
-  final emailRegex = RegExp(
-    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-  );
-  return emailRegex.hasMatch(email);
-}
+
 class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final nameController = TextEditingController();
@@ -60,59 +55,84 @@ class _RegisterPageState extends State<RegisterPage> {
                       );
   }
 */
-  Future<void> registerUser() async {
-    final url = Uri.parse("https://cardiotrack-server.onrender.com/sign-in");
-    final response = await http.post(
-      url,
+Future<void> registerUser() async {
+  final email = emailController.text.trim();
+  final name = nameController.text.trim();
+  final password = passwordController.text.trim();
+  final confirmPassword = confirmPasswordController.text.trim();
+
+  // Vérification du format email
+  final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+  if (!emailRegex.hasMatch(email)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(" Email invalide. Format attendu : x.x@x.com")),
+    );
+    return;
+  }
+
+  if (email.isEmpty || name.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(" Veuillez remplir tous les champs")),
+    );
+    return;
+  }
+  if (password != confirmPassword) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(" Les mots de passe ne correspondent pas")),
+    );
+    return;
+  }
+
+  final url = Uri.parse("https://cardiotrack-server.onrender.com/sign-in");
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({
+      "email": email,
+      "name": name,
+      "password": password,
+    }),
+  );
+  if (response.statusCode == 201) {
+    final data = jsonDecode(response.body);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(data['message'])),
+    );
+    final url2 = Uri.parse("https://cardiotrack-server.onrender.com/log-in");
+    final response2 = await http.post(
+      url2,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "email": emailController.text.trim(),
-        "name": nameController.text.trim(),
-        "password": passwordController.text.trim(),
+        "email": email,
+        "password": password,
       }),
     );
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-
-      //  print("✅ Token received: $token");
+    if (response2.statusCode == 200) {
+      final data2 = jsonDecode(response2.body);
+      final storage = FlutterSecureStorage();
+      await storage.write(
+          key: 'refresh_token', value: data2['refresh_token']);
+      await storage.write(key: 'access_token', value: data2['access_token']);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'])),
+        SnackBar(content: Text(data2['message'])),
       );
-      Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => NavBar()));
-      // TODO: Sauvegarder le token avec shared_preferences*/
-      final url2 = Uri.parse("https://cardiotrack-server.onrender.com/log-in");
-      final response2 = await http.post(
-        url2,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": emailController.text.trim(),
-          "password": passwordController.text.trim(),
-        }),
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (_) => NavBar()));
+    } else {
+      final data = jsonDecode(response2.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(data['error'])),
       );
-      if (response2.statusCode == 200) {
-        final data2 = jsonDecode(response.body);
-        final storage = FlutterSecureStorage();
-        await storage.write(
-            key: 'refresh_token', value: data2['refresh_token']);
-        await storage.write(key: 'access_token', value: data2['access_token']);
-
-        //  print("✅ Token received: $token");
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data2['message'])),
-        );
-        Navigator.of(context)
-            .pushReplacement(MaterialPageRoute(builder: (_) => NavBar()));
-      } else {
-        final data = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['error'])),
-        );
-      }
     }
+  } else {
+    final data = jsonDecode(response.body);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(data['error'])),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

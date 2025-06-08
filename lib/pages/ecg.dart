@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LiveDataChart extends StatefulWidget {
   const LiveDataChart({super.key});
@@ -41,24 +44,79 @@ class _LiveDataChartState extends State<LiveDataChart> with SingleTickerProvider
     });
   }
 
-  /*void detectPeakAndCalculateBPM(double value) {
-    if (value > 800) {
-      final now = DateTime.now();
-      if (peakTimestamps.isEmpty || now.difference(peakTimestamps.last).inMilliseconds > 300) {
-        peakTimestamps.add(now);
-        if (peakTimestamps.length >= 2) {
-          final intervalMs = now.difference(peakTimestamps[peakTimestamps.length - 2]).inMilliseconds;
-          if (intervalMs > 0) {
-            final bpm = 60000 / intervalMs;
-            setState(() {
-              heartRate = bpm.round();
-            });
-          }
-        }
+  int calculateBPMFromSpots(List<FlSpot> spots, {int minIntervalMs = 300, double sensitivity = 0.7, double samplingRate = 50}) {
+  if (spots.length < 2) return 0;
+
+  double maxY = spots.map((s) => s.y).reduce(max);
+  double threshold = maxY * sensitivity;
+  List<double> rPeaksX = [];
+  double lastPeakX = -10000;
+
+  for (int i = 1; i < spots.length - 1; i++) {
+    double prev = spots[i - 1].y;
+    double curr = spots[i].y;
+    double next = spots[i + 1].y;
+
+    if (curr > threshold && curr > prev && curr > next) {
+      if (((spots[i].x - lastPeakX) / samplingRate * 1000) > minIntervalMs) {
+        rPeaksX.add(spots[i].x);
+        lastPeakX = spots[i].x;
       }
     }
   }
-*/
+
+  if (rPeaksX.length < 2) return 0;
+
+  List<double> intervals = [];
+  for (int i = 1; i < rPeaksX.length; i++) {
+    intervals.add((rPeaksX[i] - rPeaksX[i - 1]) / samplingRate);
+  }
+  double meanInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+  return meanInterval > 0 ? (60 / meanInterval).round() : 0;
+  
+
+  
+}
+
+
+Future<Position?> getCurrentPosition() async {
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    return null;
+  }
+  LocationPermission permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      return null;
+    }
+  }
+  if (permission == LocationPermission.deniedForever) {
+    return null;
+  }
+  return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+}
+
+Future<void> sendAlertSMS(String telProche, String telDocteur, String message) async {
+  final position = await getCurrentPosition();
+String locationText = '';
+if (position != null) {
+  locationText = '\nLocalisation: https://maps.google.com/?q=${position.latitude},${position.longitude}';
+} else {
+  locationText = '\nLocalisation: non disponible';
+}
+final smsUri = Uri.parse('sms:$telProche,$telDocteur?body=${Uri.encodeComponent(message + locationText)}');
+if (await canLaunchUrl(smsUri)) {
+  await launchUrl(smsUri);
+} else {
+  print("Impossible d'ouvrir l'application SMS.");
+}
+if (heartRate <= 60) {
+  final alertMessage = "Alerte CardioTrack : BPM bas détecté ($heartRate bpm). Merci de vérifier l'état du patient.";
+  sendAlertSMS(telProche, telDocteur, alertMessage);
+}
+}
+
   void toggleDataFeed() async {
     if (_isDataFeedRunning) {
       await sendCommandToArduino("stop");
@@ -96,8 +154,9 @@ class _LiveDataChartState extends State<LiveDataChart> with SingleTickerProvider
     } catch (_) {}
     return 0.0;
   }
+
   void updateChartData(double newY) {
-    //if (spots.length >= maxDataPoints) spots.clear();
+    if (spots.length >= maxDataPoints) spots.clear();
     final newSpot = FlSpot(spots.length.toDouble(), newY);
     spots.add(newSpot);
     maxX = newSpot.x;

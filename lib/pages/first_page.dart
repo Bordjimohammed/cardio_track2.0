@@ -33,37 +33,45 @@ class _FirstPageState extends State<FirstPage> {
   });
   }
 
-  Future<void> _loadUserData() async {
-    String? token = await storage.read(key:'access_token');
-final response = await http.get(
-  Uri.parse("https://cardiotrack-server.onrender.com/me"),
-  headers: {
-    'Authorization': 'Bearer $token',
-  },
-);
-if (response.statusCode == 200) {
-  final data = jsonDecode(response.body);
-  name = data['name'];
-  email = data['email'];
-  final userProvider = Provider.of<UserProvider>(context, listen: false);
-  userProvider.setUserName(data['name']);   // ou la variable correspondante
-  userProvider.setEmail(data['email']);     // ou la variable correspondante
-  userProvider.setPassword(data['password']); // si tu veux stocker le mot de passe
-  int heartRate = data['heart_rate'];
-
-  // <= ajout
-} else {
-  final data = jsonDecode(response.body);
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(data['error'])),
+Future<void> _loadUserData() async {
+  String? token = await storage.read(key: 'access_token');
+  final response = await http.get(
+    Uri.parse("https://cardiotrack-server.onrender.com/me"),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
   );
-}
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    name = data['name'];
+    email = data['email'];
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.setUserName(data['name']);
+    userProvider.setEmail(data['email']);
+    userProvider.setPassword(data['password']);
 
-    //setState(() {
-      //name ?? 'Utilisateur';
-    //});
+    // Ajoute ce bloc pour récupérer le dernier BPM
+    final historyResponse = await http.get(
+      Uri.parse("https://cardiotrack-server.onrender.com/list_data"),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (historyResponse.statusCode == 200) {
+      final List<dynamic> history = jsonDecode(historyResponse.body);
+      if (history.isNotEmpty) {
+        final lastTest = history.last;
+        final lastBpm = lastTest['rythme'] ?? lastTest['bpm'];
+        Provider.of<HeartRateProvider>(context, listen: false).setHeartRate(lastBpm ?? 0);
+      }
+    }
+  } else {
+    final data = jsonDecode(response.body);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(data['error'])),
+    );
   }
-
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,9 +114,8 @@ if (response.statusCode == 200) {
         const SizedBox(height: 8),
         Text(
           'Suivi de votre santé cardiaque',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
+            style: Theme.of(context).textTheme.bodyLarge,
+
         ),
       ],
     );
@@ -195,11 +202,9 @@ if (response.statusCode == 200) {
       children: [
         Text(
           'Conseils du jour',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[800],
-          ),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.bold,
+      ),
         ),
         const SizedBox(height: 10),
         const TipCard(

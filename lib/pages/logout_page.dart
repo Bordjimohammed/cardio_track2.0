@@ -1,11 +1,13 @@
 import 'dart:convert';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../pages/theme_provider.dart';
 import '../login_page.dart';
+import 'package:geolocator/geolocator.dart';
+
 
 class LogoutPage extends StatefulWidget {
   const LogoutPage({super.key});
@@ -20,13 +22,27 @@ class _LogoutPageState extends State<LogoutPage> {
   final _procheTelController = TextEditingController();
   final _docteurNomController = TextEditingController();
   final _docteurTelController = TextEditingController();
+      late String userEmail;
 
+  Future<void> _saveLocalContacts() async {
+  final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('${userEmail}_proche_nom', _procheNomController.text.trim());
+    await prefs.setString('${userEmail}_proche_tel', _procheTelController.text.trim());
+    await prefs.setString('${userEmail}_docteur_nom', _docteurNomController.text.trim());
+    await prefs.setString('${userEmail}_docteur_tel', _docteurTelController.text.trim());
+  }
+  Future<void> _loadLocalContacts() async {
+    final prefs = await SharedPreferences.getInstance();
+    _procheNomController.text = prefs.getString('${userEmail}_proche_nom') ?? '';
+    _procheTelController.text = prefs.getString('${userEmail}_proche_tel') ?? '';
+    _docteurNomController.text = prefs.getString('${userEmail}_docteur_nom') ?? '';
+    _docteurTelController.text = prefs.getString('${userEmail}_docteur_tel') ?? '';
+  }
   @override
   Widget build(BuildContext context) {
       String? email;
 
     final userProvider = Provider.of<UserProvider>(context);
-
 
     return Scaffold(
       appBar: AppBar(
@@ -149,13 +165,16 @@ class _LogoutPageState extends State<LogoutPage> {
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
                             ),
-                            onPressed: () {
+                            onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 final nomProche = _procheNomController.text.trim();
                                 final telProche = _procheTelController.text.trim();
                                 final nomDoc = _docteurNomController.text.trim();
                                 final telDoc = _docteurTelController.text.trim();
-
+                                await _saveLocalContacts();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Coordonnées enregistrées !")),
+                                );
                                 //  À remplacer plus tard par une sauvegarde dans base de données
                                 print('Proche: $nomProche ($telProche)');
                                 print('Docteur: $nomDoc ($telDoc)');
@@ -383,13 +402,27 @@ void _showUserProfile(BuildContext context, UserProvider userProvider) {
                         }
                         final response = await http.post(
                         Uri.parse('https://cardiotrack-server.onrender.com/change_password'),
-                        headers: {'Content-Type': 'application/json'},
+                        headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ${userProvider.token}',
+                        },
                         body: jsonEncode({
-                        'user_id': userProvider.email, // ou email
-                        'old_password': ancien,
-                        'new_password': nouveau,
-              }),
-            );
+                        'password': ancien,
+                        'newpass': nouveau,
+                        }),
+                        );
+
+                          if (response.statusCode == 200) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Mot de passe modifié avec succès')),
+                            );
+                          } else {
+                            final error = jsonDecode(response.body);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(error['error'] ?? 'Erreur inconnue')),
+                            );
+                          }
+
                         // Simuler une mise à jour
                         print('Mot de passe mis à jour: $nouveau');
                         Navigator.pop(context);
@@ -413,5 +446,12 @@ void _showUserProfile(BuildContext context, UserProvider userProvider) {
       );
     },
   );
+}
+@override
+void initState() {
+  super.initState();
+  // Now context is available, so we can initialize userEmail
+  userEmail = Provider.of<UserProvider>(context, listen: false).email;
+  _loadLocalContacts();
 }
 }
