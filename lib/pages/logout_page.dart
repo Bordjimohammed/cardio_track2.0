@@ -7,6 +7,7 @@ import '../providers/user_provider.dart';
 import '../pages/theme_provider.dart';
 import '../login_page.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 
 class LogoutPage extends StatefulWidget {
@@ -125,7 +126,7 @@ class _LogoutPageState extends State<LogoutPage> {
                           controller: _procheTelController,
                           keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(
-                            hintText: "Ex: 0555 55 55 55",
+                            hintText: "numero de tel",
                           ),
                           validator: (value) =>
                               value!.isEmpty ? 'Veuillez entrer un numéro' : null,
@@ -148,7 +149,7 @@ class _LogoutPageState extends State<LogoutPage> {
                           controller: _docteurTelController,
                           keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(
-                            hintText: "Ex: 0666 66 66 66",
+                            hintText: "numero de tel",
                           ),
                           validator: (value) =>
                               value!.isEmpty ? 'Veuillez entrer un numéro' : null,
@@ -370,59 +371,58 @@ void _showUserProfile(BuildContext context, UserProvider userProvider) {
                   Center(
                     child: ElevatedButton(
                       onPressed: () async {
-                        final ancien = oldPasswordController.text.trim();
-                        final nouveau = newPasswordController.text.trim();
-                        final confirmation = confirmPasswordController.text.trim();
+                              final ancien = oldPasswordController.text.trim();
+                              final nouveau = newPasswordController.text.trim();
+                              final confirmation = confirmPasswordController.text.trim();
 
-                        if (ancien.isEmpty || nouveau.isEmpty || confirmation.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Veuillez remplir tous les champs')),
-                          );
-                          return;
-                        }
+                              if (ancien.isEmpty || nouveau.isEmpty || confirmation.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Veuillez remplir tous les champs')),
+                                );
+                                return;
+                              }
 
-                        if (nouveau.length < 6) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Le mot de passe doit contenir au moins 6 caractères')),
-                          );
-                          return;
-                        }
+                              if (nouveau.length < 6) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Le mot de passe doit contenir au moins 6 caractères')),
+                                );
+                                return;
+                              }
 
-                        if (ancien != userProvider.password) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Ancien mot de passe incorrect')),
-                          );
-                          return;
-                        }
-                        if (nouveau != confirmation) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Les mots de passe ne correspondent pas')),
-                          );
-                          return;
-                        }
-                        final response = await http.post(
-                        Uri.parse('https://cardiotrack-server.onrender.com/change_password'),
-                        headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ${userProvider.token}',
-                        },
-                        body: jsonEncode({
-                        'password': ancien,
-                        'newpass': nouveau,
-                        }),
-                        );
+                              if (nouveau != confirmation) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Les mots de passe ne correspondent pas')),
+                                );
+                                return;
+                              }
+                              final storage = FlutterSecureStorage();
+                              final token = await storage.read(key: 'access_token');
+                              print('TOKEN: $token'); // <-- Ajoute ceci pour vérifier
 
-                          if (response.statusCode == 200) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Mot de passe modifié avec succès')),
-                            );
-                          } else {
-                            final error = jsonDecode(response.body);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(error['error'] ?? 'Erreur inconnue')),
-                            );
-                          }
-
+                              
+                              final response = await http.post(
+                                Uri.parse('https://cardiotrack-server.onrender.com/change_password'),
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': 'Bearer $token',
+                                },
+                                body: jsonEncode({
+                                  'password': ancien,
+                                  'newpass': nouveau,
+                                }),
+                              );
+                              if (response.statusCode == 200) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Mot de passe modifié avec succès')),
+                                );
+                                Navigator.pop(context);
+                              } else {
+                                final error = jsonDecode(response.body);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error['error'] ?? 'Erreur inconnue')),
+                                );
+                              }
+                          
                         // Simuler une mise à jour
                         print('Mot de passe mis à jour: $nouveau');
                         Navigator.pop(context);

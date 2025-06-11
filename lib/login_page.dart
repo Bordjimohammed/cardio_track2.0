@@ -10,6 +10,7 @@ import 'package:Cardio_Track/pages/reset_password_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -70,43 +71,49 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
   }
-/*
 
 Future<void> googleLogin() async {
   try {
-    final url = Uri.parse("https://cardiotrack-server.onrender.com/google_login");
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) {
+      return;
+    }
+    final email = googleUser.email;
+    final name = googleUser.displayName ?? "";
 
-    // Launch the login flow
-    final result = await FlutterWebAuth.authenticate(
-      url: url.toString(),
-      callbackUrlScheme: "myapp", // This must match your custom scheme
+    final response = await http.post(
+      Uri.parse("https://cardiotrack-server.onrender.com/google_login_flutter"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "email": email,
+        "name": name,
+      }),
     );
 
-    // Extract tokens from the URL
-    final uri = Uri.parse(result);
-    final accessToken = uri.queryParameters['access_token'];
-    final refreshToken = uri.queryParameters['refresh_token'];
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final storage = FlutterSecureStorage();
+      await storage.write(key: 'refresh_token', value: data['refresh_token']);
+      await storage.write(key: 'access_token', value: data['access_token']);
 
-    // Store the tokens
-    final storage = FlutterSecureStorage();
-    await storage.write(key: 'refresh_token', value: refreshToken);
-    await storage.write(key: 'access_token', value: accessToken);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(data['message'] ?? "Connexion Google réussie")),
+      );
 
-    // Done!
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Google login successful')),
-    );
-
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => NavBar()));
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (_) => NavBar()));
+    } else {
+      final data = jsonDecode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(data['error'] ?? "Erreur Google")),
+      );
+    }
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Google login failed')),
     );
   }
 }
-*/
-
-  // Construction de l'interface utilisateur
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -212,8 +219,7 @@ Future<void> googleLogin() async {
                   children: [
                     GestureDetector(
                       onTap: () {
-                        print("Tentative de connexion avec Google...");
-                        //signInWithGoogle(context);
+                        googleLogin();
                       },
                       child: SquareTile(imagePath: 'lib/images/google.png'),
                     ),

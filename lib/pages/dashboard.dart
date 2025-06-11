@@ -262,7 +262,7 @@ Future<void> _shareTest(Map<String, dynamic> test, GlobalKey key) async {
                       leading: Icon(Icons.monitor_heart,
                           color: Colors.red[300], size: 30),
                       title: Text("Test du ${test['timestamp']}"),
-                      subtitle: Text("Rythme : ${test['rythme']} • ${test['status']}"),
+                      subtitle: Text("Statut :${test['status']}"),                 
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

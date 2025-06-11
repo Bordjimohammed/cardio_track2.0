@@ -148,7 +148,7 @@ Future<void> _loadUserData() async {
               ),
               const SizedBox(height: 8),
               Text(
-                '${heartRateProvider.heartRate}',
+              '${heartRateProvider.heartRate}',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
