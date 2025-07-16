@@ -1,0 +1,61 @@
+name: pfe
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0' # Version du SDK
+
+dependencies:
+  flutter:
+    sdk: flutter
+  smooth_page_indicator: ^1.0.0+2
+  flutter_secure_storage: ^9.0.0
+  cupertino_icons: ^1.0.8
+  curved_navigation_bar: ^1.0.3 # Vérifiez la dernière version sur pub.dev
+  fl_chart: ^0.70.2
+  http: ^1.3.0
+  shared_preferences: ^2.5.2
+  provider: ^6.1.1 # (ou la version la plus récente)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.1
+  flutter_native_splash: ^2.3.5
+  share_plus: ^7.2.1
+  geolocator: ^14.0.2
+  url_launcher: ^6.3.1
+  google_sign_in: ^7.1.0
+
+
+
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "lib/images/logo.png"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/images/google.png
+    - lib/images/apple.png
+    - lib/images/photo1.jpg
+    - lib/images/photo2.png
+    - lib/images/logo.png
+    - lib/images/intro1.png
+    - lib/images/intro2.png
+    - lib/images/intro22.png
+
+flutter_native_splash:
+  color: "#ffffff" # Couleur de fond
+  image: assets/images/logo.png # Ton image (mets-la dans le bon dossier)
+  android: true
+  ios: true
+  web: false
